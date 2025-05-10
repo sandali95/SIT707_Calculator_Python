@@ -1,0 +1,45 @@
+steps:
+  # Step 1: Install Python dependencies and run tests
+  - name: 'python:3.9'
+    id: 'Run Pytest'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pytest tests/ -v
+
+  # Step 2: Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Build Docker Image'
+    args:
+      [
+        'build',
+        '-t', 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/calculator-app/calculator-app-python:$COMMIT_SHA',
+        '.'
+      ]
+
+  # Step 3: Push Docker image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push Docker Image'
+    args:
+      ['push', 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/calculator-app/calculator-app-python:$COMMIT_SHA']
+
+  # Step 4: Deploy to Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'Deploy to Cloud Run'
+    args:
+      [
+        'beta', 'run', 'deploy', 'calculator-service-python',
+        '--image', 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/calculator-app/calculator-app-python:$COMMIT_SHA',
+        '--region', 'australia-southeast1',
+        '--platform', 'managed',
+        '--allow-unauthenticated'
+      ]
+
+images:
+  - 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/calculator-app/calculator-app-python:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

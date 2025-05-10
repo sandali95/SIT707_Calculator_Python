@@ -1,0 +1,4 @@
+flask==2.0.3  # Works with newer Werkzeug
+werkzeug==2.0.3  # Explicitly set compatible version
+gunicorn==20.1.0
+pytest==6.2.5
